@@ -21,6 +21,40 @@ from utils.data_loader import get_example_wardrobe, get_empty_wardrobe
 # ── query handler ─────────────────────────────────────────────────────────────
 
 def handle_query(user_query: str, wardrobe_choice: str) -> tuple[str, str, str]:
+    # Step 1: Guard against empty query
+    if not user_query or not user_query.strip():
+        return "Please enter a search query.", "", ""
+
+    # Step 2: Select wardrobe
+    if wardrobe_choice == "Example wardrobe":
+        wardrobe = get_example_wardrobe()
+    else:
+        wardrobe = get_empty_wardrobe()
+
+    # Step 3: Run the agent
+    session = run_agent(user_query, wardrobe)
+
+    # Step 4: Handle error
+    if session["error"]:
+        return session["error"], "", ""
+
+    # Step 5: Format and return results
+    item = session["selected_item"]
+    brand = f" — {item['brand']}" if item["brand"] else ""
+    colors = ", ".join(item["colors"])
+    tags = ", ".join(item["style_tags"])
+
+    listing_text = (
+        f"{item['title']}{brand}\n\n"
+        f"💰 ${item['price']:.2f} on {item['platform']}\n"
+        f"📦 Condition: {item['condition']}\n"
+        f"📐 Size: {item['size']}\n"
+        f"🎨 Colors: {colors}\n"
+        f"🏷️ Style: {tags}\n\n"
+        f"{item['description']}"
+    )
+
+    return listing_text, session["outfit_suggestion"], session["fit_card"]
     """
     Called by Gradio when the user submits a query.
 
